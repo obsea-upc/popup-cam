@@ -10,14 +10,14 @@ import RPi.GPIO as GPIO
 import threading
 from datetime import datetime 
 import traceback
-from rich import print as print
 
 global pin_pwm
 global ethernet
 global wifi
 pin_pwm = 18
-folder = "/home/SN001/Image_Acquisition"
-log_file = "/home/SN001/Image_Acquisition/error_log.txt"
+folder = "/home/sn001/popup-cam/acquisition"
+log_file = "/home/sn001/popup-cam/acquisition/error_log.txt"
+srv_addr = "192.168.1.100"
 
 # - - - Log Function - - -
 def log_error():
@@ -44,12 +44,12 @@ def take_picture(focus_t,width,height,filename):
     else:                                       # Horas de dia
         awb_gains = "7.6,1.6"
         exp = "normal"
-    commande = (f'sudo libcamera-still -t 15 --width {width} --height {height} --autofocus-mode manual --lens-position 12 --exposure {exp} --awbgains {awb_gains} -o {filename}.jpg')
+    commande = (f'sudo rpicam-still -t 15 --width {width} --height {height} --autofocus-mode manual --lens-position 11 --exposure {exp} --awbgains {awb_gains} -o {filename}.jpg')
     subprocess.run(commande, shell=True, capture_output=True, text=True)
     with open(log_file, 'a') as f:
             f.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Image taken with parameters: exposure mode [{exp}], awb gains [{awb_gains}]\n")
     print("Photo capture complete.")
-    os.system(f"scp {filename}.jpg vmsarti12:/opt/acquisition/pics/PopUp_Cam-SN001")
+    os.system(f"scp {filename}.jpg {srv_addr}:/opt/acquisition/pics/PopUp_Cam-SN001")
     print('Image successfully pushed to server')
     
 def open_pwm(pin_pwm,frequency):
@@ -78,7 +78,7 @@ def main_lights(config, absolute_path, width, height):
     focus_t = int(config['focus_t'])*1000
     print('aaa')
     print(absolute_path)
-    commande = f"sudo libcamera-still -t 1 --width {width} --height {height} --autofocus-mode manual --lens-position 12 --awbgains 7.6,1.6 -o {absolute_path}/photo_before_flash.jpg"
+    commande = f"sudo rpicam-still -t 1 --width {width} --height {height} --autofocus-mode manual --lens-position 12 --awbgains 7.6,1.6 -o {absolute_path}/photo_before_flash.jpg"
     resultat = subprocess.run(commande, shell=True, capture_output=True, text=True)
     if os.path.exists(f"{absolute_path}/photo_before_flash.jpg") == True:
         print("The picture before flash has been taken")
@@ -149,6 +149,8 @@ def yolo_run(absolute_path, file_path, time_stamp):
 
 def main():
     try:
+        
+
         time_now = datetime.now()
         timestamp_json = time_now.strftime('%Y-%m-%dT%H:%M:%SZ')
         
